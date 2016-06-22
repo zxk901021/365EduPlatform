@@ -30,7 +30,7 @@
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/AppTheme"
-        android:name="com.example.jpush.JPushApplication" >
+        android:name="com.zhy_9.edu_platform.base.BaseApplication" >
         <activity
             android:name=".SplashActivity"
             android:label="@string/app_name" >
@@ -98,11 +98,12 @@
         <receiver android:name="cn.jpush.android.service.AlarmReceiver" />
         
         <meta-data android:name="JPUSH_CHANNEL" android:value="developer-default"/>
-        <meta-data android:name="JPUSH_APPKEY" android:value="Your AppKey"/> 
+        <meta-data android:name="JPUSH_APPKEY" android:value="4fd5952b7d2a6088633cc9a9"/> 
         
         <activity
             android:name=".MainActivity"
-            android:label="@string/title_activity_main" >
+            android:label="@string/title_activity_main"
+            android:hardwareAccelerated="true" >
         </activity>
     </application>
 
