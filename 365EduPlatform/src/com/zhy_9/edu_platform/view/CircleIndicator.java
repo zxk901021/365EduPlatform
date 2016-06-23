@@ -1,6 +1,6 @@
 package com.zhy_9.edu_platform.view;
 
-import com.example.view.R;
+import com.zhy_9.hse.jpush.R;
 
 import android.animation.Animator;
 import android.animation.AnimatorInflater;

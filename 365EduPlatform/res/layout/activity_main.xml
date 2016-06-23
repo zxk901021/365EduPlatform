@@ -3,10 +3,55 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent" >
 
-    <WebView 
-        android:id="@+id/main_web"
+    <android.support.v4.widget.SwipeRefreshLayout
+        android:id="@+id/refresh"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:scrollbars="none"/>
+        android:visibility="gone" >
+
+        <WebView
+            android:id="@+id/main_web"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scrollbars="none" />
+    </android.support.v4.widget.SwipeRefreshLayout>
+
+    <RelativeLayout
+        android:id="@+id/pager_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" >
+
+        <android.support.v4.view.ViewPager
+            android:id="@+id/launch_pager"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" >
+        </android.support.v4.view.ViewPager>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:orientation="vertical"
+            android:paddingBottom="50dp" >
+
+            <com.zhy_9.edu_platform.view.CircleIndicator
+                android:id="@+id/launch_indicator"
+                android:layout_width="match_parent"
+                android:layout_height="40dp" >
+            </com.zhy_9.edu_platform.view.CircleIndicator>
+
+            <Button
+                android:id="@+id/launch_start"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:background="@drawable/launch_btn"
+                android:clickable="false"
+                android:text="开始体验  &lt;"
+                android:textColor="#000000"
+                android:textSize="18sp"
+                android:visibility="invisible" />
+        </LinearLayout>
+    </RelativeLayout>
 
 </RelativeLayout>

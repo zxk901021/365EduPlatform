@@ -23,7 +23,7 @@ import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.example.view.R;
+import com.zhy_9.hse.jpush.R;
 
 @SuppressLint("NewApi") public class MaterialDialog {
 

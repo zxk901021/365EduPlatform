@@ -6,6 +6,7 @@ import java.util.List;
 import com.zhy_9.edu_platform.adapter.LaunchPagerAdapter;
 import com.zhy_9.edu_platform.util.EduSohoUtil;
 import com.zhy_9.edu_platform.view.CircleIndicator;
+import com.zhy_9.hse.jpush.R;
 
 import android.app.Activity;
 import android.content.Intent;

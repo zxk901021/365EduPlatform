@@ -1,19 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.view"
+    package="com.zhy_9.hse.jpush"
     android:versionCode="1"
     android:versionName="1.0" >
-    
-    
 
     <uses-sdk
         android:minSdkVersion="16"
         android:targetSdkVersion="22" />
-    
-    
-    <permission android:name="com.example.view.permission.JPUSH_MESSAGE" android:protectionLevel="signature" />
-    
-    <uses-permission android:name="com.example.view.permission.JPUSH_MESSAGE" />
+
+    <permission
+        android:name="com.zhy_9.hse.jpush.permission.JPUSH_MESSAGE"
+        android:protectionLevel="signature" />
+
+    <uses-permission android:name="com.zhy_9.hse.jpush.permission.JPUSH_MESSAGE" />
     <uses-permission android:name="android.permission.RECEIVE_USER_PRESENT" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
@@ -26,21 +25,25 @@
     <uses-permission android:name="android.permission.WRITE_SETTINGS" />
 
     <application
+        android:name="com.zhy_9.edu_platform.base.BaseApplication"
         android:allowBackup="true"
-        android:icon="@drawable/ic_launcher"
+        android:icon="@drawable/hse_logo"
         android:label="@string/app_name"
-        android:theme="@style/AppTheme"
-        android:name="com.zhy_9.edu_platform.base.BaseApplication" >
+        android:theme="@style/AppTheme" >
         <activity
-            android:name=".SplashActivity"
+            android:name="com.example.view.SplashActivity"
             android:label="@string/app_name" >
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+            
         </activity>
-        
+
+        <service
+            android:name="com.zhy_9.edu_platform.service.DownLoadService"
+            android:enabled="true"
+            android:exported="false" >
+            <intent-filter>
+                <action android:name="com.zhy_9.edu_platform.service.DownLoadService" />
+            </intent-filter>
+        </service>
         <service
             android:name="cn.jpush.android.service.PushService"
             android:enabled="true"
@@ -52,58 +55,73 @@
                 <action android:name="cn.jpush.android.intent.PUSH_TIME" />
             </intent-filter>
         </service>
-        
+
         <receiver
             android:name="cn.jpush.android.service.PushReceiver"
             android:enabled="true" >
-          <intent-filter android:priority="1000"> 
-                <action android:name="cn.jpush.android.intent.NOTIFICATION_RECEIVED_PROXY" /> 
-                <category android:name="com.example.view"/> 
+            <intent-filter android:priority="1000" >
+                <action android:name="cn.jpush.android.intent.NOTIFICATION_RECEIVED_PROXY" />
+
+                <category android:name="com.zhy_9.hse.jpush" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.USER_PRESENT" />
                 <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
             </intent-filter>
-            
         </receiver>
-        
+
         <activity
             android:name="cn.jpush.android.ui.PushActivity"
             android:configChanges="orientation|keyboardHidden"
             android:exported="false" >
             <intent-filter>
                 <action android:name="cn.jpush.android.ui.PushActivity" />
+
                 <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="com.example.view" />
+                <category android:name="com.zhy_9.hse.jpush" />
             </intent-filter>
         </activity>
-        
+
         <receiver
-             android:name="com.zhy_9.edu_platform.receiver.RegisterReceiver"
-             android:enabled="true">
-             <intent-filter>
-                 <!--Required 用户注册SDK的intent-->
-                 <action android:name="cn.jpush.android.intent.REGISTRATION" /> 
-                 
-                 <category android:name="com.example.view" />
-             </intent-filter>
-         </receiver>
-        
+            android:name="com.zhy_9.edu_platform.receiver.RegisterReceiver"
+            android:enabled="true" >
+            <intent-filter>
+
+                <!-- Required 用户注册SDK的intent -->
+                <action android:name="cn.jpush.android.intent.REGISTRATION" />
+
+                <category android:name="com.zhy_9.hse.jpush" />
+            </intent-filter>
+        </receiver>
+
         <service
             android:name="cn.jpush.android.service.DownloadService"
             android:enabled="true"
             android:exported="false" >
         </service>
-        
+
         <receiver android:name="cn.jpush.android.service.AlarmReceiver" />
-        
-        <meta-data android:name="JPUSH_CHANNEL" android:value="developer-default"/>
-        <meta-data android:name="JPUSH_APPKEY" android:value="4fd5952b7d2a6088633cc9a9"/> 
-        
+
+        <meta-data
+            android:name="JPUSH_CHANNEL"
+            android:value="developer-default" />
+        <meta-data
+            android:name="JPUSH_APPKEY"
+            android:value="29116ded20c639aa2fc4bae7" />
+
         <activity
-            android:name=".MainActivity"
-            android:label="@string/title_activity_main"
-            android:hardwareAccelerated="true" >
+            android:name="com.example.view.MainActivity"
+            android:hardwareAccelerated="true"
+            android:label="@string/title_activity_main" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="com.example.view.NotificationActivity"
+            android:label="@string/title_activity_notification" >
         </activity>
     </application>
 
