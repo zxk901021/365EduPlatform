@@ -28,6 +28,7 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.view.ViewPager;
@@ -41,6 +42,7 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.webkit.CookieManager;
+import android.webkit.CookieSyncManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
@@ -164,7 +166,11 @@ import android.widget.RelativeLayout;
 		CookieManager cookieManager = CookieManager.getInstance();
 		cookieManager.setAcceptCookie(true);
 		cookieManager.setCookie(url, ANDROID_HSE_COOKIE);
-		cookieManager.flush();
+		if (Build.VERSION.SDK_INT < 21) {
+			CookieSyncManager.getInstance().sync();
+		}else {
+			cookieManager.flush();
+		}
 	}
 
 	private void initView() {

@@ -110,8 +110,7 @@
 
         <activity
             android:name="com.example.view.MainActivity"
-            android:hardwareAccelerated="true"
-            android:label="@string/title_activity_main" >
+            android:hardwareAccelerated="true" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
