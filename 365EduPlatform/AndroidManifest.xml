@@ -33,7 +33,6 @@
         <activity
             android:name="com.example.view.SplashActivity"
             android:label="@string/app_name" >
-            
         </activity>
 
         <service
