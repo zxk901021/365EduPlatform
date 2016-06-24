@@ -15,6 +15,7 @@ import com.zhy_9.edu_platform.util.HttpUtil;
 import com.zhy_9.edu_platform.util.PackInfoUtil;
 import com.zhy_9.edu_platform.util.VolleyListener;
 import com.zhy_9.edu_platform.view.CircleIndicator;
+import com.zhy_9.edu_platform.view.FoundWebView;
 import com.zhy_9.edu_platform.view.MaterialDialog;
 import com.zhy_9.hse.jpush.R;
 
@@ -27,7 +28,9 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -39,11 +42,13 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.View.OnScrollChangeListener;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.webkit.CookieManager;
 import android.webkit.CookieSyncManager;
 import android.webkit.JavascriptInterface;
+import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -54,9 +59,9 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 
-@SuppressLint("NewApi") public class MainActivity extends Activity implements OnClickListener{
-	
-	
+@SuppressLint("NewApi")
+public class MainActivity extends Activity implements OnClickListener {
+
 	private ViewPager launchPager;
 	private List<View> views;
 	private static final int[] imgs = new int[] { R.drawable.edu_launcher_1,
@@ -64,12 +69,12 @@ import android.widget.RelativeLayout;
 	private LaunchPagerAdapter adapter;
 	private CircleIndicator indicator;
 	private Button start;
-
+	private FoundWebView webview;
 	private WebView mainWeb;
 	private WebSettings webSettings;
 	public static final String JAVA_SCRIPT_INTERFACE_METHOD_NAME = "wst";
-	public static final String EDU_PLATFORM_URL = "http://192.168.1.188/";
-	public static final String CHECK_VERSION_URL = "http://192.168.1.188/wb/api/getversion";
+	public static final String EDU_PLATFORM_URL = "http://hse2.mai022.com";
+	public static final String CHECK_VERSION_URL = "http://hse2.mai022.com/wb/api/getversion";
 	private String registerId;
 	private SharedPreferences preferences;
 	private Editor editor;
@@ -88,6 +93,8 @@ import android.widget.RelativeLayout;
 			mainWeb.reload();
 		}
 	};
+	private int oritation;
+	private int mScrollY;
 
 	Handler handler = new Handler() {
 		public void handleMessage(android.os.Message msg) {
@@ -106,6 +113,13 @@ import android.widget.RelativeLayout;
 				}
 				break;
 
+			case 10:
+				// setRequestedOrientation(oritation);
+				break;
+			case 20:
+				// setRequestedOrientation(oritation);
+				break;
+
 			default:
 				break;
 			}
@@ -116,6 +130,9 @@ import android.widget.RelativeLayout;
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+		getWindow().addFlags(
+				WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED);
+		Log.e("oncreate", "oncreate");
 		initView();
 		initAdapter();
 		addPagerChangedListener();
@@ -124,6 +141,23 @@ import android.widget.RelativeLayout;
 		getRegisterId();
 		setAliasAndTags();
 		webConfigSetting();
+	}
+
+	@Override
+	public void onConfigurationChanged(Configuration newConfig) {
+		super.onConfigurationChanged(newConfig);
+		Log.e("onConfigurationChanged", "onConfigurationChanged");
+		if (this.getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
+			oritation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+			// setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+			handler.sendEmptyMessage(10);
+			Log.e("orientation", "landscape");
+		} else if (this.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+			oritation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+			handler.sendEmptyMessage(20);
+			// setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+			Log.e("orientation", "portrait");
+		}
 	}
 
 	private void showDialog() {
@@ -161,14 +195,15 @@ import android.widget.RelativeLayout;
 		}
 
 	}
-	
-	private void syncCookie(String url){
+
+	@SuppressWarnings("deprecation")
+	private void syncCookie(String url) {
 		CookieManager cookieManager = CookieManager.getInstance();
 		cookieManager.setAcceptCookie(true);
 		cookieManager.setCookie(url, ANDROID_HSE_COOKIE);
 		if (Build.VERSION.SDK_INT < 21) {
 			CookieSyncManager.getInstance().sync();
-		}else {
+		} else {
 			cookieManager.flush();
 		}
 	}
@@ -178,7 +213,6 @@ import android.widget.RelativeLayout;
 		refresh = (SwipeRefreshLayout) findViewById(R.id.refresh);
 		refresh.setColorSchemeColors(R.color.green, R.color.lite_blue);
 		refresh.setOnRefreshListener(listener);
-		
 		launchPager = (ViewPager) findViewById(R.id.launch_pager);
 		indicator = (CircleIndicator) findViewById(R.id.launch_indicator);
 		start = (Button) findViewById(R.id.launch_start);
@@ -190,8 +224,6 @@ import android.widget.RelativeLayout;
 		editor = preferences.edit();
 		tag = preferences.getString("tag", "");
 	}
-	
-	
 
 	private void checkVersion() {
 		HttpUtil.getVolley(this, CHECK_VERSION_URL, new VolleyListener() {
@@ -236,6 +268,20 @@ import android.widget.RelativeLayout;
 		mainWeb.setWebChromeClient(mWebChromeClient);
 		syncCookie(EDU_PLATFORM_URL);
 		mainWeb.loadUrl(EDU_PLATFORM_URL);
+		mainWeb.setOnScrollChangeListener(new OnScrollChangeListener() {
+
+			@Override
+			public void onScrollChange(View v, int scrollX, int scrollY,
+					int oldScrollX, int oldScrollY) {
+
+				mScrollY = scrollY;
+				if (mainWeb.getScrollY() == 0) {
+					refresh.setEnabled(true);
+				} else {
+					refresh.setEnabled(false);
+				}
+			}
+		});
 	}
 
 	@JavascriptInterface
@@ -248,7 +294,7 @@ import android.widget.RelativeLayout;
 		if (!TextUtils.isEmpty(str)) {
 			if (tag.equals(str)) {
 				return null;
-			}else {
+			} else {
 				String[] set = str.split("_");
 
 				if (!TextUtils.isEmpty(set[0])) {
@@ -286,20 +332,17 @@ import android.widget.RelativeLayout;
 			tags = getArray(str);
 			if (tags == null) {
 				return;
-			}else {
+			} else {
 				for (int i = 0; i < tags.size(); i++) {
 					Log.e("tags", tags.toString());
 				}
 				JPushInterface.setTags(this, tags, new TagAliasCallback() {
 
 					@Override
-					public void gotResult(int arg0, String arg1, Set<String> arg2) {
+					public void gotResult(int arg0, String arg1,
+							Set<String> arg2) {
 						Log.e("setTag", arg0 + "");
 
-						// if (arg0 == 0) {
-						// editor.putString("tag", str);
-						// editor.commit();
-						// }
 					}
 				});
 			}
@@ -352,6 +395,30 @@ import android.widget.RelativeLayout;
 			}
 		};
 
+		// 3.0++°æ±¾
+		public void openFileChooser(ValueCallback<Uri> uploadMsg,
+				String acceptType) {
+			openFileChooserImpl(uploadMsg);
+		}
+
+		// 3.0--°æ±¾
+		public void openFileChooser(ValueCallback<Uri> uploadMsg) {
+			openFileChooserImpl(uploadMsg);
+		}
+
+		public void openFileChooser(ValueCallback<Uri> uploadMsg,
+				String acceptType, String capture) {
+			openFileChooserImpl(uploadMsg);
+		}
+
+		// For Android > 5.0
+		public boolean onShowFileChooser(WebView webView,
+				ValueCallback<Uri[]> uploadMsg,
+				WebChromeClient.FileChooserParams fileChooserParams) {
+			openFileChooserImplForAndroid5(uploadMsg);
+			return true;
+		}
+
 		public void onProgressChanged(WebView view, int newProgress) {
 			if (newProgress < 100) {
 				refresh.post(new Runnable() {
@@ -371,7 +438,62 @@ import android.widget.RelativeLayout;
 				});
 			}
 		};
+
 	};
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode,
+			Intent intent) {
+		if (requestCode == FILECHOOSER_RESULTCODE) {
+			if (null == mUploadMessage)
+				return;
+			Uri result = intent == null || resultCode != RESULT_OK ? null
+					: intent.getData();
+			mUploadMessage.onReceiveValue(result);
+			mUploadMessage = null;
+
+		} else if (requestCode == FILECHOOSER_RESULTCODE_FOR_ANDROID_5) {
+			if (null == mUploadMessageForAndroid5)
+				return;
+			Uri result = (intent == null || resultCode != RESULT_OK) ? null
+					: intent.getData();
+			if (result != null) {
+				mUploadMessageForAndroid5.onReceiveValue(new Uri[] { result });
+			} else {
+				mUploadMessageForAndroid5.onReceiveValue(new Uri[] {});
+			}
+			mUploadMessageForAndroid5 = null;
+		}
+	}
+
+	public final static int FILECHOOSER_RESULTCODE = 3;
+	public final static int FILECHOOSER_RESULTCODE_FOR_ANDROID_5 = 4;
+
+	private void openFileChooserImplForAndroid5(ValueCallback<Uri[]> uploadMsg) {
+		mUploadMessageForAndroid5 = uploadMsg;
+		Intent contentSelectionIntent = new Intent(Intent.ACTION_GET_CONTENT);
+		contentSelectionIntent.addCategory(Intent.CATEGORY_OPENABLE);
+		contentSelectionIntent.setType("image/*");
+
+		Intent chooserIntent = new Intent(Intent.ACTION_CHOOSER);
+		chooserIntent.putExtra(Intent.EXTRA_INTENT, contentSelectionIntent);
+		chooserIntent.putExtra(Intent.EXTRA_TITLE, "Image Chooser");
+
+		startActivityForResult(chooserIntent,
+				FILECHOOSER_RESULTCODE_FOR_ANDROID_5);
+	}
+
+	public ValueCallback<Uri> mUploadMessage;
+	public ValueCallback<Uri[]> mUploadMessageForAndroid5;
+
+	private void openFileChooserImpl(ValueCallback<Uri> uploadMsg) {
+		mUploadMessage = uploadMsg;
+		Intent i = new Intent(Intent.ACTION_GET_CONTENT);
+		i.addCategory(Intent.CATEGORY_OPENABLE);
+		i.setType("image/*");
+		startActivityForResult(Intent.createChooser(i, "File Chooser"),
+				FILECHOOSER_RESULTCODE);
+	}
 
 	private void setFullScreen() {
 		getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
@@ -401,7 +523,7 @@ import android.widget.RelativeLayout;
 		}
 		return super.onKeyDown(keyCode, event);
 	};
-	
+
 	public void initAdapter() {
 		int j = imgs.length;
 		views = new ArrayList<View>();
@@ -421,7 +543,7 @@ import android.widget.RelativeLayout;
 		launchPager.setAdapter(adapter);
 		indicator.setViewPager(launchPager);
 	}
-	
+
 	public void addPagerChangedListener() {
 		launchPager
 				.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
@@ -455,5 +577,5 @@ import android.widget.RelativeLayout;
 		pagerLayout.setVisibility(View.GONE);
 		refresh.setVisibility(View.VISIBLE);
 	}
-	
+
 }
