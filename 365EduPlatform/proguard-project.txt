@@ -32,3 +32,4 @@
 
 -dontwarn com.google.**
 -keep class com.google.protobuf.** {*;}
+-keep class com.android.volley.**{*;}
