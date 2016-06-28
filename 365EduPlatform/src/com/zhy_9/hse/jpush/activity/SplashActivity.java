@@ -1,4 +1,4 @@
-package com.example.view;
+package com.zhy_9.hse.jpush.activity;
 
 import java.util.ArrayList;
 import java.util.List;

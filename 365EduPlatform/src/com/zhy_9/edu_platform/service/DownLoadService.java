@@ -34,8 +34,8 @@ import android.util.Log;
 import android.widget.RemoteViews;
 import android.widget.Toast;
 
-import com.example.view.NotificationActivity;
 import com.zhy_9.hse.jpush.R;
+import com.zhy_9.hse.jpush.activity.NotificationActivity;
 
 public class DownLoadService extends Service {
 	private NotificationManager notificationMrg;

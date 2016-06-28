@@ -18,3 +18,17 @@
 #-keepclassmembers class fqcn.of.javascript.interface.for.webview {
 #   public *;
 #}
+-keepattributes JavascriptInterface
+-keepclassmembers class com.example.view.MainActivity {
+   <methods>;
+}
+-dontoptimize
+-dontpreverify
+
+-dontwarn cn.jpush.**
+-keep class cn.jpush.** { *; }
+-dontwarn com.google.**
+-keep class com.google.gson.** {*;}
+
+-dontwarn com.google.**
+-keep class com.google.protobuf.** {*;}

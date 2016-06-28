@@ -28,12 +28,12 @@
     <application
         android:name="com.zhy_9.edu_platform.base.BaseApplication"
         android:allowBackup="true"
+        android:hardwareAccelerated="true"
         android:icon="@drawable/hse_logo"
         android:label="@string/app_name"
-        android:theme="@style/AppTheme"
-        android:hardwareAccelerated="true" >
+        android:theme="@style/AppTheme" >
         <activity
-            android:name="com.example.view.SplashActivity"
+            android:name="com.zhy_9.hse.jpush.activity.SplashActivity"
             android:label="@string/app_name" >
         </activity>
 
@@ -110,10 +110,13 @@
             android:name="JPUSH_APPKEY"
             android:value="29116ded20c639aa2fc4bae7" />
 
+        <service android:name="cn.jpush.android.service.DaemonService" >
+        </service>
+
         <activity
-            android:name="com.example.view.MainActivity"
+            android:name="com.zhy_9.hse.jpush.activity.MainActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
-             >
+            android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -121,7 +124,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="com.example.view.NotificationActivity"
+            android:name="com.zhy_9.hse.jpush.activity.NotificationActivity"
             android:label="@string/title_activity_notification" >
         </activity>
     </application>

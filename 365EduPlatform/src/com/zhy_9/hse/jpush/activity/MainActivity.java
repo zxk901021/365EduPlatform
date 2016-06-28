@@ -1,4 +1,4 @@
-package com.example.view;
+package com.zhy_9.hse.jpush.activity;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -19,6 +19,7 @@ import com.zhy_9.edu_platform.view.FoundWebView;
 import com.zhy_9.edu_platform.view.MaterialDialog;
 import com.zhy_9.hse.jpush.R;
 
+import cn.jpush.android.api.InstrumentedActivity;
 import cn.jpush.android.api.JPushInterface;
 import cn.jpush.android.api.TagAliasCallback;
 import android.annotation.SuppressLint;
@@ -60,7 +61,8 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 
 @SuppressLint("NewApi")
-public class MainActivity extends Activity implements OnClickListener {
+public class MainActivity extends InstrumentedActivity implements
+		OnClickListener {
 
 	private ViewPager launchPager;
 	private List<View> views;
@@ -457,8 +459,10 @@ public class MainActivity extends Activity implements OnClickListener {
 				return;
 			Uri result = (intent == null || resultCode != RESULT_OK) ? null
 					: intent.getData();
+
 			if (result != null) {
 				mUploadMessageForAndroid5.onReceiveValue(new Uri[] { result });
+				Log.e("result", result.toString());
 			} else {
 				mUploadMessageForAndroid5.onReceiveValue(new Uri[] {});
 			}
