@@ -16,6 +16,7 @@ import com.zhy_9.edu_platform.util.PackInfoUtil;
 import com.zhy_9.edu_platform.util.VolleyListener;
 import com.zhy_9.edu_platform.view.CircleIndicator;
 import com.zhy_9.edu_platform.view.FoundWebView;
+import com.zhy_9.edu_platform.view.FoundWebView.ScrollInterface;
 import com.zhy_9.edu_platform.view.MaterialDialog;
 import com.zhy_9.hse.jpush.R;
 
@@ -23,7 +24,6 @@ import cn.jpush.android.api.InstrumentedActivity;
 import cn.jpush.android.api.JPushInterface;
 import cn.jpush.android.api.TagAliasCallback;
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -43,7 +43,7 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.View.OnScrollChangeListener;
+//import android.view.View.OnScrollChangeListener;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.webkit.CookieManager;
@@ -71,12 +71,13 @@ public class MainActivity extends InstrumentedActivity implements
 	private LaunchPagerAdapter adapter;
 	private CircleIndicator indicator;
 	private Button start;
-	private FoundWebView webview;
-	private WebView mainWeb;
+	private FoundWebView mainWeb;
 	private WebSettings webSettings;
 	public static final String JAVA_SCRIPT_INTERFACE_METHOD_NAME = "wst";
 	public static final String EDU_PLATFORM_URL = "http://hse2.mai022.com";
-	public static final String CHECK_VERSION_URL = "http://hse2.mai022.com/wb/api/getversion";
+	public static final String TEST_URL = "http://192.168.1.188";
+	public static final String CHECK_VERSION_URL = EDU_PLATFORM_URL
+			+ "/wb/api/getversion";
 	private String registerId;
 	private SharedPreferences preferences;
 	private Editor editor;
@@ -87,6 +88,10 @@ public class MainActivity extends InstrumentedActivity implements
 	private String downUrl;
 	private static final String ANDROID_HSE_COOKIE = "hsecookie=hseclientforandroid";
 	private RelativeLayout pagerLayout;
+	public final static int FILECHOOSER_RESULTCODE = 3;
+	public final static int FILECHOOSER_RESULTCODE_FOR_ANDROID_5 = 4;
+	public ValueCallback<Uri> mUploadMessage;
+	public ValueCallback<Uri[]> mUploadMessageForAndroid5;
 
 	OnRefreshListener listener = new OnRefreshListener() {
 
@@ -134,7 +139,6 @@ public class MainActivity extends InstrumentedActivity implements
 		setContentView(R.layout.activity_main);
 		getWindow().addFlags(
 				WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED);
-		Log.e("oncreate", "oncreate");
 		initView();
 		initAdapter();
 		addPagerChangedListener();
@@ -148,16 +152,13 @@ public class MainActivity extends InstrumentedActivity implements
 	@Override
 	public void onConfigurationChanged(Configuration newConfig) {
 		super.onConfigurationChanged(newConfig);
-		Log.e("onConfigurationChanged", "onConfigurationChanged");
 		if (this.getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
 			oritation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
-			// setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 			handler.sendEmptyMessage(10);
 			Log.e("orientation", "landscape");
 		} else if (this.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
 			oritation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
 			handler.sendEmptyMessage(20);
-			// setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 			Log.e("orientation", "portrait");
 		}
 	}
@@ -211,7 +212,7 @@ public class MainActivity extends InstrumentedActivity implements
 	}
 
 	private void initView() {
-		mainWeb = (WebView) findViewById(R.id.main_web);
+		mainWeb = (FoundWebView) findViewById(R.id.main_web);
 		refresh = (SwipeRefreshLayout) findViewById(R.id.refresh);
 		refresh.setColorSchemeColors(R.color.green, R.color.lite_blue);
 		refresh.setOnRefreshListener(listener);
@@ -270,13 +271,10 @@ public class MainActivity extends InstrumentedActivity implements
 		mainWeb.setWebChromeClient(mWebChromeClient);
 		syncCookie(EDU_PLATFORM_URL);
 		mainWeb.loadUrl(EDU_PLATFORM_URL);
-		mainWeb.setOnScrollChangeListener(new OnScrollChangeListener() {
+		mainWeb.setOnCustomScroolChangeListener(new ScrollInterface() {
 
 			@Override
-			public void onScrollChange(View v, int scrollX, int scrollY,
-					int oldScrollX, int oldScrollY) {
-
-				mScrollY = scrollY;
+			public void onSChanged(int l, int t, int oldl, int oldt) {
 				if (mainWeb.getScrollY() == 0) {
 					refresh.setEnabled(true);
 				} else {
@@ -284,6 +282,20 @@ public class MainActivity extends InstrumentedActivity implements
 				}
 			}
 		});
+		// mainWeb.setOnScrollChangeListener(new OnScrollChangeListener() {
+		//
+		// @Override
+		// public void onScrollChange(View v, int scrollX, int scrollY,
+		// int oldScrollX, int oldScrollY) {
+		//
+		// mScrollY = scrollY;
+		// if (mainWeb.getScrollY() == 0) {
+		// refresh.setEnabled(true);
+		// } else {
+		// refresh.setEnabled(false);
+		// }
+		// }
+		// });
 	}
 
 	@JavascriptInterface
@@ -397,20 +409,19 @@ public class MainActivity extends InstrumentedActivity implements
 			}
 		};
 
-		// 3.0++°æ±¾
-		public void openFileChooser(ValueCallback<Uri> uploadMsg,
-				String acceptType) {
-			openFileChooserImpl(uploadMsg);
-		}
-
-		// 3.0--°æ±¾
-		public void openFileChooser(ValueCallback<Uri> uploadMsg) {
-			openFileChooserImpl(uploadMsg);
-		}
-
 		public void openFileChooser(ValueCallback<Uri> uploadMsg,
 				String acceptType, String capture) {
-			openFileChooserImpl(uploadMsg);
+
+			mUploadMessage = uploadMsg;
+
+			Intent intent = new Intent(
+					Intent.ACTION_PICK,
+					android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+			MainActivity.this.startActivityForResult(
+					Intent.createChooser(intent, "File Chooser"),
+					FILECHOOSER_RESULTCODE);
+			startActivityForResult(intent, FILECHOOSER_RESULTCODE);
+
 		}
 
 		// For Android > 5.0
@@ -463,15 +474,16 @@ public class MainActivity extends InstrumentedActivity implements
 			if (result != null) {
 				mUploadMessageForAndroid5.onReceiveValue(new Uri[] { result });
 				Log.e("result", result.toString());
+				MaterialDialog dialog = new MaterialDialog(this);
+				dialog.setMessage(result.toString());
+				dialog.setCanceledOnTouchOutside(true);
+				dialog.show();
 			} else {
 				mUploadMessageForAndroid5.onReceiveValue(new Uri[] {});
 			}
 			mUploadMessageForAndroid5 = null;
 		}
 	}
-
-	public final static int FILECHOOSER_RESULTCODE = 3;
-	public final static int FILECHOOSER_RESULTCODE_FOR_ANDROID_5 = 4;
 
 	private void openFileChooserImplForAndroid5(ValueCallback<Uri[]> uploadMsg) {
 		mUploadMessageForAndroid5 = uploadMsg;
@@ -486,9 +498,6 @@ public class MainActivity extends InstrumentedActivity implements
 		startActivityForResult(chooserIntent,
 				FILECHOOSER_RESULTCODE_FOR_ANDROID_5);
 	}
-
-	public ValueCallback<Uri> mUploadMessage;
-	public ValueCallback<Uri[]> mUploadMessageForAndroid5;
 
 	private void openFileChooserImpl(ValueCallback<Uri> uploadMsg) {
 		mUploadMessage = uploadMsg;

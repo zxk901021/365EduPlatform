@@ -19,7 +19,7 @@
 #   public *;
 #}
 -keepattributes JavascriptInterface
--keepclassmembers class com.example.view.MainActivity {
+-keepclassmembers class com.zhy_9.hse.jpush.activity.MainActivity {
    <methods>;
 }
 -dontoptimize

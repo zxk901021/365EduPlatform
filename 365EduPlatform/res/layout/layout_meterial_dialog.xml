@@ -73,8 +73,8 @@
             <Button
                 android:id="@+id/btn_n"
                 style="@style/ActionButton"
-                android:stateListAnimator="@null"
                 android:textColor="@color/black_de"
+                android:stateListAnimator="@null"
                 tools:text="CANCEL" />
 
             <Button

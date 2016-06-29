@@ -8,17 +8,17 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="gone" >
-        <RelativeLayout 
-             android:layout_width="match_parent"
-        android:layout_height="match_parent">
-            <WebView
-            android:id="@+id/main_web"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:scrollbars="none" />
-        </RelativeLayout>
 
-        
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" >
+
+            <com.zhy_9.edu_platform.view.FoundWebView
+                android:id="@+id/main_web"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scrollbars="none" />
+        </RelativeLayout>
     </android.support.v4.widget.SwipeRefreshLayout>
 
     <RelativeLayout
