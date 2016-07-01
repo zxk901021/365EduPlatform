@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.json.JSONObject;
 
@@ -11,7 +13,9 @@ import com.android.volley.VolleyError;
 import com.zhy_9.edu_platform.adapter.LaunchPagerAdapter;
 import com.zhy_9.edu_platform.service.DownLoadService;
 import com.zhy_9.edu_platform.util.EduSohoUtil;
+import com.zhy_9.edu_platform.util.HttpThread;
 import com.zhy_9.edu_platform.util.HttpUtil;
+import com.zhy_9.edu_platform.util.NetWorkStatusUtil;
 import com.zhy_9.edu_platform.util.PackInfoUtil;
 import com.zhy_9.edu_platform.util.VolleyListener;
 import com.zhy_9.edu_platform.view.CircleIndicator;
@@ -35,6 +39,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v4.widget.SwipeRefreshLayout.OnRefreshListener;
@@ -48,6 +53,7 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.webkit.CookieManager;
 import android.webkit.CookieSyncManager;
+import android.webkit.DownloadListener;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -74,10 +80,10 @@ public class MainActivity extends InstrumentedActivity implements
 	private FoundWebView mainWeb;
 	private WebSettings webSettings;
 	public static final String JAVA_SCRIPT_INTERFACE_METHOD_NAME = "wst";
-	public static final String EDU_PLATFORM_URL = "http://hse2.mai022.com";
-	public static final String TEST_URL = "http://192.168.1.188";
-	public static final String CHECK_VERSION_URL = EDU_PLATFORM_URL
-			+ "/wb/api/getversion";
+	 public static final String EDU_PLATFORM_URL = "http://hse2.mai022.com";
+//	public static final String EDU_PLATFORM_URL = "http://unis-huashan.h3c.com/cn/";
+//	public static final String TEST_URL = "http://192.168.1.188";
+	public static final String CHECK_VERSION_URL = "http://hse2.mai022.com/wb/api/getversion";
 	private String registerId;
 	private SharedPreferences preferences;
 	private Editor editor;
@@ -92,6 +98,9 @@ public class MainActivity extends InstrumentedActivity implements
 	public final static int FILECHOOSER_RESULTCODE_FOR_ANDROID_5 = 4;
 	public ValueCallback<Uri> mUploadMessage;
 	public ValueCallback<Uri[]> mUploadMessageForAndroid5;
+	private LinearLayout errorPage;
+	private Timer timer;
+	private int errorFlag = 0;
 
 	OnRefreshListener listener = new OnRefreshListener() {
 
@@ -126,6 +135,15 @@ public class MainActivity extends InstrumentedActivity implements
 			case 20:
 				// setRequestedOrientation(oritation);
 				break;
+				
+			case 5:
+				mainWeb.setVisibility(View.GONE);
+				errorPage.setVisibility(View.VISIBLE);
+				break;
+				
+			case 6:
+				refresh.setVisibility(View.VISIBLE);
+				break;
 
 			default:
 				break;
@@ -137,8 +155,6 @@ public class MainActivity extends InstrumentedActivity implements
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-		getWindow().addFlags(
-				WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED);
 		initView();
 		initAdapter();
 		addPagerChangedListener();
@@ -220,6 +236,7 @@ public class MainActivity extends InstrumentedActivity implements
 		indicator = (CircleIndicator) findViewById(R.id.launch_indicator);
 		start = (Button) findViewById(R.id.launch_start);
 		pagerLayout = (RelativeLayout) findViewById(R.id.pager_layout);
+		errorPage = (LinearLayout) findViewById(R.id.error_page);
 	}
 
 	private void initEditor() {
@@ -233,11 +250,13 @@ public class MainActivity extends InstrumentedActivity implements
 
 			@Override
 			public void onErrorResponse(VolleyError error) {
-
+				Log.e("onError", "onError");
+				mainWeb.loadUrl(EDU_PLATFORM_URL);
 			}
 
 			@Override
 			public void onResponse(String response) {
+				Log.e("onResponse", response);
 				versionResponse = response;
 				handler.sendEmptyMessage(VERSION_CODE);
 			}
@@ -267,9 +286,47 @@ public class MainActivity extends InstrumentedActivity implements
 		mainWeb.setWebViewClient(mWebViewClient);
 		webSettings = mainWeb.getSettings();
 		webSettings.setJavaScriptEnabled(true);
+		webSettings.setAllowFileAccess(true);
+		webSettings.setAllowFileAccessFromFileURLs(true);
+		webSettings.setAllowContentAccess(true);
 		mainWeb.addJavascriptInterface(this, JAVA_SCRIPT_INTERFACE_METHOD_NAME);
 		mainWeb.setWebChromeClient(mWebChromeClient);
 		syncCookie(EDU_PLATFORM_URL);
+		mainWeb.setDownloadListener(new DownloadListener() {
+
+			@Override
+			public void onDownloadStart(final String url, String userAgent,
+					String contentDisposition, String mimetype,
+					long contentLength) {
+				if (NetWorkStatusUtil.isNetConnected(MainActivity.this)) {
+					if (NetWorkStatusUtil.isWifiConnected(MainActivity.this)) {
+						new Thread(new HttpThread(url)).start();
+					}else {
+						final MaterialDialog downloadDialog = new MaterialDialog(MainActivity.this);
+						downloadDialog.setCanceledOnTouchOutside(true);
+						downloadDialog.setTitle("文件下载");
+						downloadDialog.setMessage("当前网络为运营商网络，是否确认下载？");
+						downloadDialog.setPositiveButton("确认下载", new OnClickListener() {
+							
+							@Override
+							public void onClick(View v) {
+								new Thread(new HttpThread(url)).start();
+							}
+						});
+						downloadDialog.setNegativeButton("取消", new OnClickListener() {
+							
+							@Override
+							public void onClick(View v) {
+								downloadDialog.dismiss();
+								
+							}
+						});
+						downloadDialog.show();
+					}
+				}
+				
+			}
+		});
 		mainWeb.loadUrl(EDU_PLATFORM_URL);
 		mainWeb.setOnCustomScroolChangeListener(new ScrollInterface() {
 
@@ -371,8 +428,57 @@ public class MainActivity extends InstrumentedActivity implements
 		public boolean shouldOverrideUrlLoading(WebView view, String url) {
 			return false;
 		};
+		
+		public void onPageStarted(final WebView view, String url, Bitmap favicon) {
+			timer = new Timer();
+			TimerTask task = new TimerTask() {
+				
+				@Override
+				public void run() {
+					if (view.getProgress() < 100) {
+						Message message = new Message();
+						message.what = 5;
+						handler.sendMessage(message);
+						timer.cancel();
+						timer.purge();
+					}
+					
+				}
+				
+			};
+			timer.schedule(task, 5000, 1000);
+		};
+		
+		public void onReceivedError(final WebView view, int errorCode, String description, final String failingUrl) {
+			errorFlag = 1;
+			if (refresh.getVisibility() == View.VISIBLE) {
+				refresh.setVisibility(View.GONE);
+				errorPage.setVisibility(View.VISIBLE);
+				errorPageClick(view, failingUrl);
+				
+			};
+			}
+			public void onPageFinished(WebView view, String url) {
+				timer.cancel();
+				timer.purge();
+				if (errorFlag == 2) {
+					refresh.setVisibility(View.VISIBLE);
+				}
+			};
 
 	};
+	
+	private void errorPageClick(final WebView view, final String failingUrl){
+		errorPage.setOnClickListener(new OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				mainWeb.loadUrl(failingUrl);
+				errorPage.setVisibility(View.GONE);
+				errorFlag = 2;
+			}
+		});
+	}
 
 	private CustomViewCallback mCallback = null;
 	private View mView = null;
@@ -409,6 +515,7 @@ public class MainActivity extends InstrumentedActivity implements
 			}
 		};
 
+		@SuppressWarnings("unused")
 		public void openFileChooser(ValueCallback<Uri> uploadMsg,
 				String acceptType, String capture) {
 
@@ -423,6 +530,8 @@ public class MainActivity extends InstrumentedActivity implements
 			startActivityForResult(intent, FILECHOOSER_RESULTCODE);
 
 		}
+		
+		
 
 		// For Android > 5.0
 		public boolean onShowFileChooser(WebView webView,
@@ -474,10 +583,10 @@ public class MainActivity extends InstrumentedActivity implements
 			if (result != null) {
 				mUploadMessageForAndroid5.onReceiveValue(new Uri[] { result });
 				Log.e("result", result.toString());
-				MaterialDialog dialog = new MaterialDialog(this);
-				dialog.setMessage(result.toString());
-				dialog.setCanceledOnTouchOutside(true);
-				dialog.show();
+//				MaterialDialog dialog = new MaterialDialog(this);
+//				dialog.setMessage(result.toString());
+//				dialog.setCanceledOnTouchOutside(true);
+//				dialog.show();
 			} else {
 				mUploadMessageForAndroid5.onReceiveValue(new Uri[] {});
 			}
@@ -587,8 +696,12 @@ public class MainActivity extends InstrumentedActivity implements
 
 	@Override
 	public void onClick(View v) {
-		pagerLayout.setVisibility(View.GONE);
-		refresh.setVisibility(View.VISIBLE);
+			pagerLayout.setVisibility(View.GONE);
+			if (errorFlag == 0) {
+				refresh.setVisibility(View.VISIBLE);
+			}else {
+				errorPage.setVisibility(View.VISIBLE);
+				errorPageClick(mainWeb, EDU_PLATFORM_URL);
+			}
 	}
-
 }
