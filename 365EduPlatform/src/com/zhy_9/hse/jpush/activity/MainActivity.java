@@ -35,6 +35,8 @@ import android.content.SharedPreferences.Editor;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -80,9 +82,9 @@ public class MainActivity extends InstrumentedActivity implements
 	private FoundWebView mainWeb;
 	private WebSettings webSettings;
 	public static final String JAVA_SCRIPT_INTERFACE_METHOD_NAME = "wst";
-	 public static final String EDU_PLATFORM_URL = "http://hse2.mai022.com";
-//	public static final String EDU_PLATFORM_URL = "http://unis-huashan.h3c.com/cn/";
-//	public static final String TEST_URL = "http://192.168.1.188";
+	public static final String EDU_PLATFORM_URL = "http://hse2.mai022.com";
+	// public static final String EDU_PLATFORM_URL = "https://www.google.com";
+	// public static final String TEST_URL = "http://192.168.1.188";
 	public static final String CHECK_VERSION_URL = "http://hse2.mai022.com/wb/api/getversion";
 	private String registerId;
 	private SharedPreferences preferences;
@@ -135,12 +137,12 @@ public class MainActivity extends InstrumentedActivity implements
 			case 20:
 				// setRequestedOrientation(oritation);
 				break;
-				
+
 			case 5:
 				mainWeb.setVisibility(View.GONE);
 				errorPage.setVisibility(View.VISIBLE);
 				break;
-				
+
 			case 6:
 				refresh.setVisibility(View.VISIBLE);
 				break;
@@ -166,6 +168,12 @@ public class MainActivity extends InstrumentedActivity implements
 	}
 
 	@Override
+	protected void onResume() {
+		super.onResume();
+		mainWeb.onResume();
+	}
+
+	@Override
 	public void onConfigurationChanged(Configuration newConfig) {
 		super.onConfigurationChanged(newConfig);
 		if (this.getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
@@ -179,40 +187,12 @@ public class MainActivity extends InstrumentedActivity implements
 		}
 	}
 
-	private void showDialog() {
-		final MaterialDialog dialog = new MaterialDialog(this);
-		dialog.setTitle("更新");
-		dialog.setMessage("当前有新版本，是否更新？");
-		dialog.setPositiveButton("确认", new OnClickListener() {
-
-			@Override
-			public void onClick(View v) {
-				Intent intent = new Intent(MainActivity.this,
-						DownLoadService.class);
-				intent.putExtra("url", downUrl);
-				intent.setAction("com.zhy_9.edu_platform.service.DownLoadService");
-				startService(intent);
-				dialog.dismiss();
-			}
-		});
-		dialog.setNegativeButton("否", new OnClickListener() {
-
-			@Override
-			public void onClick(View v) {
-				dialog.dismiss();
-			}
-		});
-		dialog.setCanceledOnTouchOutside(true);
-		dialog.show();
-	}
-
 	private void checkUpdate(String oldVersion, String newVersion, String url) {
 		if (!TextUtils.isEmpty(oldVersion) && !TextUtils.isEmpty(newVersion)) {
 			if (!oldVersion.equals(newVersion)) {
-				showDialog();
+				EduSohoUtil.showUpdateDialog(MainActivity.this, downUrl);
 			}
 		}
-
 	}
 
 	@SuppressWarnings("deprecation")
@@ -286,9 +266,11 @@ public class MainActivity extends InstrumentedActivity implements
 		mainWeb.setWebViewClient(mWebViewClient);
 		webSettings = mainWeb.getSettings();
 		webSettings.setJavaScriptEnabled(true);
-		webSettings.setAllowFileAccess(true);
-		webSettings.setAllowFileAccessFromFileURLs(true);
-		webSettings.setAllowContentAccess(true);
+		webSettings.setTextZoom(100);
+		// webSettings.setAllowFileAccess(true);
+		// webSettings.setAllowFileAccessFromFileURLs(true);
+		// webSettings.setAllowContentAccess(true);
+		// webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
 		mainWeb.addJavascriptInterface(this, JAVA_SCRIPT_INTERFACE_METHOD_NAME);
 		mainWeb.setWebChromeClient(mWebChromeClient);
 		syncCookie(EDU_PLATFORM_URL);
@@ -298,33 +280,45 @@ public class MainActivity extends InstrumentedActivity implements
 			public void onDownloadStart(final String url, String userAgent,
 					String contentDisposition, String mimetype,
 					long contentLength) {
+				ConnectivityManager manager = (ConnectivityManager) MainActivity.this
+						.getSystemService(Context.CONNECTIVITY_SERVICE);
+				NetworkInfo info = manager.getActiveNetworkInfo();
+				String name = info.getSubtypeName();
+				Log.e("name", name);
 				if (NetWorkStatusUtil.isNetConnected(MainActivity.this)) {
 					if (NetWorkStatusUtil.isWifiConnected(MainActivity.this)) {
-						new Thread(new HttpThread(url)).start();
-					}else {
-						final MaterialDialog downloadDialog = new MaterialDialog(MainActivity.this);
+						Intent intent = new Intent(MainActivity.this,
+								DownLoadService.class);
+						intent.putExtra("url", url);
+						intent.setAction("com.zhy_9.edu_platform.service.DownLoadService");
+						MainActivity.this.startService(intent);
+					} else {
+						final MaterialDialog downloadDialog = new MaterialDialog(
+								MainActivity.this);
 						downloadDialog.setCanceledOnTouchOutside(true);
 						downloadDialog.setTitle("文件下载");
 						downloadDialog.setMessage("当前网络为运营商网络，是否确认下载？");
-						downloadDialog.setPositiveButton("确认下载", new OnClickListener() {
-							
-							@Override
-							public void onClick(View v) {
-								new Thread(new HttpThread(url)).start();
-							}
-						});
-						downloadDialog.setNegativeButton("取消", new OnClickListener() {
-							
-							@Override
-							public void onClick(View v) {
-								downloadDialog.dismiss();
-								
-							}
-						});
+						downloadDialog.setPositiveButton("确认下载",
+								new OnClickListener() {
+
+									@Override
+									public void onClick(View v) {
+										new Thread(new HttpThread(url)).start();
+									}
+								});
+						downloadDialog.setNegativeButton("取消",
+								new OnClickListener() {
+
+									@Override
+									public void onClick(View v) {
+										downloadDialog.dismiss();
+
+									}
+								});
 						downloadDialog.show();
 					}
 				}
-				
+
 			}
 		});
 		mainWeb.loadUrl(EDU_PLATFORM_URL);
@@ -360,47 +354,12 @@ public class MainActivity extends InstrumentedActivity implements
 		return registerId;
 	}
 
-	public HashSet<String> getArray(String str) {
-		HashSet<String> sets = new HashSet<String>();
-		if (!TextUtils.isEmpty(str)) {
-			if (tag.equals(str)) {
-				return null;
-			} else {
-				String[] set = str.split("_");
-
-				if (!TextUtils.isEmpty(set[0])) {
-					String a = "e" + set[0];
-					sets.add(a);
-				}
-				if (!TextUtils.isEmpty(set[1])) {
-					String b = "d" + set[1];
-					sets.add(b);
-				}
-				if (!TextUtils.isEmpty(set[2])) {
-					String[] set1 = set[2].split("$$$");
-					for (int i = 0; i < set1.length; i++) {
-						sets.add("g" + set1[i]);
-					}
-				}
-				if (!TextUtils.isEmpty(set[3])) {
-					String[] set2 = set[3].split("$$$");
-					for (int i = 0; i < set2.length; i++) {
-						sets.add("p" + set2[i]);
-					}
-				}
-				editor.putString("tag", str);
-				editor.commit();
-			}
-		}
-		return sets;
-	}
-
 	@JavascriptInterface
 	public void setFunction(final String str) {
 		if (!TextUtils.isEmpty(str)) {
 			Log.e("setFunction", str);
 			Set<String> tags = new HashSet<String>();
-			tags = getArray(str);
+			tags = EduSohoUtil.getArray(str, tag, editor);
 			if (tags == null) {
 				return;
 			} else {
@@ -428,49 +387,86 @@ public class MainActivity extends InstrumentedActivity implements
 		public boolean shouldOverrideUrlLoading(WebView view, String url) {
 			return false;
 		};
-		
+
 		public void onPageStarted(final WebView view, String url, Bitmap favicon) {
-			timer = new Timer();
-			TimerTask task = new TimerTask() {
-				
+
+			refresh.post(new Runnable() {
+
 				@Override
 				public void run() {
-					if (view.getProgress() < 100) {
-						Message message = new Message();
-						message.what = 5;
-						handler.sendMessage(message);
-						timer.cancel();
-						timer.purge();
-					}
-					
+					refresh.setRefreshing(true);
 				}
-				
-			};
-			timer.schedule(task, 5000, 1000);
+			});
+			// Timer timer = new Timer();
+			// TimerTask task = new TimerTask() {
+			//
+			// @Override
+			// public void run() {
+			// handler.sendEmptyMessage(1);
+			//
+			// }
+			// };
+			// timer = new Timer();
+			// TimerTask task = new TimerTask() {
+			//
+			// @Override
+			// public void run() {
+			// if (view.getProgress() < 100) {
+			// Message message = new Message();
+			// message.what = 5;
+			// handler.sendMessage(message);
+			// timer.cancel();
+			// timer.purge();
+			// }
+			//
+			// }
+			//
+			// };
+			// timer.schedule(task, 5000, 1000);
 		};
-		
-		public void onReceivedError(final WebView view, int errorCode, String description, final String failingUrl) {
-			errorFlag = 1;
-			if (refresh.getVisibility() == View.VISIBLE) {
-				refresh.setVisibility(View.GONE);
-				errorPage.setVisibility(View.VISIBLE);
-				errorPageClick(view, failingUrl);
-				
-			};
-			}
-			public void onPageFinished(WebView view, String url) {
-				timer.cancel();
-				timer.purge();
-				if (errorFlag == 2) {
-					refresh.setVisibility(View.VISIBLE);
+
+		public void onReceivedError(final WebView view, int errorCode,
+				String description, final String failingUrl) {
+			// errorFlag = 1;
+			// if (refresh.getVisibility() == View.VISIBLE) {
+			// refresh.setVisibility(View.GONE);
+			// errorPage.setVisibility(View.VISIBLE);
+			// errorPageClick(view, failingUrl);
+			//
+			// };
+			String data = "Page NO FOUND！";
+			mainWeb.loadUrl("javascript:document.body.innerHTML=\"" + data
+					+ "\"");
+			mainWeb.setOnClickListener(new OnClickListener() {
+
+				@Override
+				public void onClick(View v) {
+					mainWeb.loadUrl(EDU_PLATFORM_URL);
+
 				}
-			};
+			});
+		}
+
+		public void onPageFinished(WebView view, String url) {
+			// timer.cancel();
+			// timer.purge();
+			refresh.post(new Runnable() {
+
+				@Override
+				public void run() {
+					refresh.setRefreshing(false);
+				}
+			});
+			if (errorFlag == 2) {
+				refresh.setVisibility(View.VISIBLE);
+			}
+		};
 
 	};
-	
-	private void errorPageClick(final WebView view, final String failingUrl){
+
+	private void errorPageClick(final WebView view, final String failingUrl) {
 		errorPage.setOnClickListener(new OnClickListener() {
-			
+
 			@Override
 			public void onClick(View v) {
 				mainWeb.loadUrl(failingUrl);
@@ -530,35 +526,38 @@ public class MainActivity extends InstrumentedActivity implements
 			startActivityForResult(intent, FILECHOOSER_RESULTCODE);
 
 		}
-		
-		
 
 		// For Android > 5.0
 		public boolean onShowFileChooser(WebView webView,
 				ValueCallback<Uri[]> uploadMsg,
 				WebChromeClient.FileChooserParams fileChooserParams) {
+			Log.e("onShowFileChooser", "onShowFileChooser");
+			// Uri result =
+			// Uri.parse("file:///storage/emulated/0/DCIM/Camera/IMG_20160610_192930.jpg");
+			//
+			// uploadMsg.onReceiveValue(new Uri[]{result});
 			openFileChooserImplForAndroid5(uploadMsg);
 			return true;
 		}
 
 		public void onProgressChanged(WebView view, int newProgress) {
-			if (newProgress < 100) {
-				refresh.post(new Runnable() {
-
-					@Override
-					public void run() {
-						refresh.setRefreshing(true);
-					}
-				});
-			} else {
-				refresh.post(new Runnable() {
-
-					@Override
-					public void run() {
-						refresh.setRefreshing(false);
-					}
-				});
-			}
+			// if (newProgress < 100) {
+			// refresh.post(new Runnable() {
+			//
+			// @Override
+			// public void run() {
+			// refresh.setRefreshing(true);
+			// }
+			// });
+			// } else {
+			// refresh.post(new Runnable() {
+			//
+			// @Override
+			// public void run() {
+			// refresh.setRefreshing(false);
+			// }
+			// });
+			// }
 		};
 
 	};
@@ -579,14 +578,13 @@ public class MainActivity extends InstrumentedActivity implements
 				return;
 			Uri result = (intent == null || resultCode != RESULT_OK) ? null
 					: intent.getData();
-
 			if (result != null) {
 				mUploadMessageForAndroid5.onReceiveValue(new Uri[] { result });
 				Log.e("result", result.toString());
-//				MaterialDialog dialog = new MaterialDialog(this);
-//				dialog.setMessage(result.toString());
-//				dialog.setCanceledOnTouchOutside(true);
-//				dialog.show();
+				// MaterialDialog dialog = new MaterialDialog(this);
+				// dialog.setMessage(result.toString());
+				// dialog.setCanceledOnTouchOutside(true);
+				// dialog.show();
 			} else {
 				mUploadMessageForAndroid5.onReceiveValue(new Uri[] {});
 			}
@@ -632,7 +630,8 @@ public class MainActivity extends InstrumentedActivity implements
 	}
 
 	protected void onPause() {
-		mainWeb.reload();
+		// mainWeb.reload();
+		mainWeb.onPause();
 		super.onPause();
 	};
 
@@ -696,12 +695,12 @@ public class MainActivity extends InstrumentedActivity implements
 
 	@Override
 	public void onClick(View v) {
-			pagerLayout.setVisibility(View.GONE);
-			if (errorFlag == 0) {
-				refresh.setVisibility(View.VISIBLE);
-			}else {
-				errorPage.setVisibility(View.VISIBLE);
-				errorPageClick(mainWeb, EDU_PLATFORM_URL);
-			}
+		pagerLayout.setVisibility(View.GONE);
+		if (errorFlag == 0) {
+			refresh.setVisibility(View.VISIBLE);
+		} else {
+			errorPage.setVisibility(View.VISIBLE);
+			errorPageClick(mainWeb, EDU_PLATFORM_URL);
+		}
 	}
 }

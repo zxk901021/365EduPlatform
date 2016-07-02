@@ -31,9 +31,11 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.util.Log;
+import android.webkit.MimeTypeMap;
 import android.widget.RemoteViews;
 import android.widget.Toast;
 
+import com.zhy_9.edu_platform.constants.MIMITypeArray;
 import com.zhy_9.hse.jpush.R;
 import com.zhy_9.hse.jpush.activity.NotificationActivity;
 
@@ -177,6 +179,7 @@ public class DownLoadService extends Service {
 					break;
 				case 2:
 					if (data.changer) {
+						Log.e("data.uri", data.Uri.toString());
 						openfile(data.Uri);
 					} else {
 						Log.i("avi", "取消下载");
@@ -209,8 +212,31 @@ public class DownLoadService extends Service {
 		Intent intent = new Intent(Intent.ACTION_VIEW);
 		// 区别于默认优先启动在activity栈中已经存在的activity（如果之前启动过，并还没有被destroy的话）而是无论是否存在，都重新启动新的activity
 		intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-		intent.setDataAndType(url, "application/vnd.android.package-archive");
+		// intent.setDataAndType(url,
+		// "application/vnd.android.package-archive");
+		intent.setAction(Intent.ACTION_VIEW);
+		String type = getMIMEType(url.toString());
+		intent.setDataAndType(url, type);
 		startActivity(intent);
+	}
+
+	public String getMIMEType(String fileName) {
+		String type = "/";
+		int dotIndex = fileName.lastIndexOf(".");
+		if (dotIndex < 0) {
+			return type;
+		}
+		String endName = fileName.substring(dotIndex, fileName.length())
+				.toLowerCase();
+		if (endName == "")
+			return type;
+		int len = MIMITypeArray.MIMITable.length;
+		for (int i = 0; i < len; i++) {
+			if (endName.equals(MIMITypeArray.MIMITable[i][0])) {
+				type = MIMITypeArray.MIMITable[i][1];
+			}
+		}
+		return type;
 	}
 
 	public class Holder {
