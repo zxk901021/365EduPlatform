@@ -41,7 +41,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Message;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v4.widget.SwipeRefreshLayout.OnRefreshListener;
@@ -67,6 +66,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.Toast;
 
 @SuppressLint("NewApi")
 public class MainActivity extends InstrumentedActivity implements
@@ -83,8 +83,8 @@ public class MainActivity extends InstrumentedActivity implements
 	private WebSettings webSettings;
 	public static final String JAVA_SCRIPT_INTERFACE_METHOD_NAME = "wst";
 	public static final String EDU_PLATFORM_URL = "http://hse2.mai022.com";
-	// public static final String EDU_PLATFORM_URL = "https://www.google.com";
-	// public static final String TEST_URL = "http://192.168.1.188";
+//	public static final String EDU_PLATFORM_URL = "http://192.168.1.188";
+//	public static final String EDU_PLATFORM_URL = "https://www.google.com";
 	public static final String CHECK_VERSION_URL = "http://hse2.mai022.com/wb/api/getversion";
 	private String registerId;
 	private SharedPreferences preferences;
@@ -145,6 +145,19 @@ public class MainActivity extends InstrumentedActivity implements
 
 			case 6:
 				refresh.setVisibility(View.VISIBLE);
+				break;
+				
+			case 111:
+				Log.e("currentTime_2", System.currentTimeMillis() + "");
+				if (refresh.isRefreshing()) {
+					refresh.post(new Runnable() {
+						
+						@Override
+						public void run() {
+							refresh.setRefreshing(false);
+						}
+					});
+				}
 				break;
 
 			default:
@@ -289,7 +302,7 @@ public class MainActivity extends InstrumentedActivity implements
 					if (NetWorkStatusUtil.isWifiConnected(MainActivity.this)) {
 						Intent intent = new Intent(MainActivity.this,
 								DownLoadService.class);
-						intent.putExtra("url", url);
+						intent.putExtra("url", EDU_PLATFORM_URL + url);
 						intent.setAction("com.zhy_9.edu_platform.service.DownLoadService");
 						MainActivity.this.startService(intent);
 					} else {
@@ -389,7 +402,7 @@ public class MainActivity extends InstrumentedActivity implements
 		};
 
 		public void onPageStarted(final WebView view, String url, Bitmap favicon) {
-
+			Log.e("currentTime-1", System.currentTimeMillis() + "");
 			refresh.post(new Runnable() {
 
 				@Override
@@ -397,6 +410,16 @@ public class MainActivity extends InstrumentedActivity implements
 					refresh.setRefreshing(true);
 				}
 			});
+			timer = new Timer();
+			TimerTask task = new TimerTask() {
+				
+				@Override
+				public void run() {
+					handler.sendEmptyMessage(111);
+					
+				}
+			};
+			timer.schedule(task, 5000);
 			// Timer timer = new Timer();
 			// TimerTask task = new TimerTask() {
 			//
@@ -460,8 +483,10 @@ public class MainActivity extends InstrumentedActivity implements
 			if (errorFlag == 2) {
 				refresh.setVisibility(View.VISIBLE);
 			}
+			timer.cancel();
+			
 		};
-
+		
 	};
 
 	private void errorPageClick(final WebView view, final String failingUrl) {
@@ -635,11 +660,46 @@ public class MainActivity extends InstrumentedActivity implements
 		super.onPause();
 	};
 
-	public boolean onKeyDown(int keyCode, android.view.KeyEvent event) {
-		if (keyCode == KeyEvent.KEYCODE_BACK) {
-			if (mainWeb.canGoBack()) {
-				mainWeb.goBack();
+	private long currentTime;
+	private String currentUrl;
+	private String[] treeUrls = new String[] { "http://hse2.mai022.com/",
+			"http://hse2.mai022.com/course/explore",
+			"http://hse2.mai022.com/my/exam", "http://hse2.mai022.com/user" };
+
+	private boolean isTreeUrl(String currentUrl) {
+		if (currentUrl.contains("http://hse2.mai022.com/user")) {
+			return true;
+		}
+		for (String s : treeUrls) {
+			if (s.equals(currentUrl)) {
 				return true;
+			}
+		}
+		return false;
+	}
+
+	private void pressTwiceToBack() {
+		if (System.currentTimeMillis() - currentTime > 2000) {
+			Toast.makeText(MainActivity.this, "再按一次将退出HSE驿站",
+					Toast.LENGTH_SHORT).show();
+			currentTime = System.currentTimeMillis();
+		} else {
+			finish();
+		}
+	}
+
+	public boolean onKeyDown(int keyCode, android.view.KeyEvent event) {
+		currentUrl = mainWeb.getUrl();
+		Log.e("currentUrl", currentUrl);
+		if (keyCode == KeyEvent.KEYCODE_BACK) {
+			if (isTreeUrl(currentUrl)) {
+				pressTwiceToBack();
+				return true;
+			} else {
+				if (mainWeb.canGoBack()) {
+					mainWeb.goBack();
+					return true;
+				}
 			}
 		}
 		return super.onKeyDown(keyCode, event);
@@ -692,12 +752,18 @@ public class MainActivity extends InstrumentedActivity implements
 					}
 				});
 	}
+	public void isFreshVisiableAndFreshing(){
+		
+	}
 
 	@Override
 	public void onClick(View v) {
 		pagerLayout.setVisibility(View.GONE);
 		if (errorFlag == 0) {
 			refresh.setVisibility(View.VISIBLE);
+			if (refresh.isRefreshing()) {
+				
+			}
 		} else {
 			errorPage.setVisibility(View.VISIBLE);
 			errorPageClick(mainWeb, EDU_PLATFORM_URL);
