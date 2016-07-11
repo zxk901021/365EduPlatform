@@ -293,45 +293,52 @@ public class MainActivity extends InstrumentedActivity implements
 			public void onDownloadStart(final String url, String userAgent,
 					String contentDisposition, String mimetype,
 					long contentLength) {
-				ConnectivityManager manager = (ConnectivityManager) MainActivity.this
-						.getSystemService(Context.CONNECTIVITY_SERVICE);
-				NetworkInfo info = manager.getActiveNetworkInfo();
-				String name = info.getSubtypeName();
-				Log.e("name", name);
-				if (NetWorkStatusUtil.isNetConnected(MainActivity.this)) {
-					if (NetWorkStatusUtil.isWifiConnected(MainActivity.this)) {
-						Intent intent = new Intent(MainActivity.this,
-								DownLoadService.class);
-						intent.putExtra("url", EDU_PLATFORM_URL + url);
-						intent.setAction("com.zhy_9.edu_platform.service.DownLoadService");
-						MainActivity.this.startService(intent);
-					} else {
-						final MaterialDialog downloadDialog = new MaterialDialog(
-								MainActivity.this);
-						downloadDialog.setCanceledOnTouchOutside(true);
-						downloadDialog.setTitle("文件下载");
-						downloadDialog.setMessage("当前网络为运营商网络，是否确认下载？");
-						downloadDialog.setPositiveButton("确认下载",
-								new OnClickListener() {
+				
 
-									@Override
-									public void onClick(View v) {
-										new Thread(new HttpThread(url)).start();
-									}
-								});
-						downloadDialog.setNegativeButton("取消",
-								new OnClickListener() {
-
-									@Override
-									public void onClick(View v) {
-										downloadDialog.dismiss();
-
-									}
-								});
-						downloadDialog.show();
-					}
-				}
-
+//				ConnectivityManager manager = (ConnectivityManager) MainActivity.this
+//						.getSystemService(Context.CONNECTIVITY_SERVICE);
+//				NetworkInfo info = manager.getActiveNetworkInfo();
+//				String name = info.getSubtypeName();
+//				Log.e("name", name);
+//				if (NetWorkStatusUtil.isNetConnected(MainActivity.this)) {
+//					if (NetWorkStatusUtil.isWifiConnected(MainActivity.this)) {
+//						Intent intent = new Intent(MainActivity.this,
+//								DownLoadService.class);
+//						intent.putExtra("url", EDU_PLATFORM_URL + url);
+//						intent.setAction("com.zhy_9.edu_platform.service.DownLoadService");
+//						MainActivity.this.startService(intent);
+//					} else {
+//						final MaterialDialog downloadDialog = new MaterialDialog(
+//								MainActivity.this);
+//						downloadDialog.setCanceledOnTouchOutside(true);
+//						downloadDialog.setTitle("文件下载");
+//						downloadDialog.setMessage("当前网络为运营商网络，是否确认下载？");
+//						downloadDialog.setPositiveButton("确认下载",
+//								new OnClickListener() {
+//
+//									@Override
+//									public void onClick(View v) {
+//										new Thread(new HttpThread(url)).start();
+//									}
+//								});
+//						downloadDialog.setNegativeButton("取消",
+//								new OnClickListener() {
+//
+//									@Override
+//									public void onClick(View v) {
+//										downloadDialog.dismiss();
+//
+//									}
+//								});
+//						downloadDialog.show();
+//					}
+//				}
+				Uri uri = Uri.parse(url);  
+	            Intent intent = new Intent(Intent.ACTION_VIEW, uri);  
+	            startActivity(intent); 
+			
+				
+				
 			}
 		});
 		mainWeb.loadUrl(EDU_PLATFORM_URL);
@@ -680,7 +687,7 @@ public class MainActivity extends InstrumentedActivity implements
 
 	private void pressTwiceToBack() {
 		if (System.currentTimeMillis() - currentTime > 2000) {
-			Toast.makeText(MainActivity.this, "再按一次将退出HSE驿站",
+			Toast.makeText(MainActivity.this, "每天学习一点点，安全永相伴",
 					Toast.LENGTH_SHORT).show();
 			currentTime = System.currentTimeMillis();
 		} else {
