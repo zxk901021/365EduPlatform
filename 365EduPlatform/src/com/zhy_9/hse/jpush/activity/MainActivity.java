@@ -62,6 +62,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.webkit.WebChromeClient.CustomViewCallback;
+import android.webkit.WebSettings.PluginState;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -83,8 +84,8 @@ public class MainActivity extends InstrumentedActivity implements
 	private WebSettings webSettings;
 	public static final String JAVA_SCRIPT_INTERFACE_METHOD_NAME = "wst";
 	public static final String EDU_PLATFORM_URL = "http://hse2.mai022.com";
-//	public static final String EDU_PLATFORM_URL = "http://192.168.1.188";
-//	public static final String EDU_PLATFORM_URL = "https://www.google.com";
+	// public static final String EDU_PLATFORM_URL = "http://192.168.1.188";
+	// public static final String EDU_PLATFORM_URL = "https://www.google.com";
 	public static final String CHECK_VERSION_URL = "http://hse2.mai022.com/wb/api/getversion";
 	private String registerId;
 	private SharedPreferences preferences;
@@ -146,12 +147,12 @@ public class MainActivity extends InstrumentedActivity implements
 			case 6:
 				refresh.setVisibility(View.VISIBLE);
 				break;
-				
+
 			case 111:
 				Log.e("currentTime_2", System.currentTimeMillis() + "");
 				if (refresh.isRefreshing()) {
 					refresh.post(new Runnable() {
-						
+
 						@Override
 						public void run() {
 							refresh.setRefreshing(false);
@@ -184,6 +185,8 @@ public class MainActivity extends InstrumentedActivity implements
 	protected void onResume() {
 		super.onResume();
 		mainWeb.onResume();
+		mainWeb.resumeTimers();
+
 	}
 
 	@Override
@@ -293,52 +296,50 @@ public class MainActivity extends InstrumentedActivity implements
 			public void onDownloadStart(final String url, String userAgent,
 					String contentDisposition, String mimetype,
 					long contentLength) {
-				
 
-//				ConnectivityManager manager = (ConnectivityManager) MainActivity.this
-//						.getSystemService(Context.CONNECTIVITY_SERVICE);
-//				NetworkInfo info = manager.getActiveNetworkInfo();
-//				String name = info.getSubtypeName();
-//				Log.e("name", name);
-//				if (NetWorkStatusUtil.isNetConnected(MainActivity.this)) {
-//					if (NetWorkStatusUtil.isWifiConnected(MainActivity.this)) {
-//						Intent intent = new Intent(MainActivity.this,
-//								DownLoadService.class);
-//						intent.putExtra("url", EDU_PLATFORM_URL + url);
-//						intent.setAction("com.zhy_9.edu_platform.service.DownLoadService");
-//						MainActivity.this.startService(intent);
-//					} else {
-//						final MaterialDialog downloadDialog = new MaterialDialog(
-//								MainActivity.this);
-//						downloadDialog.setCanceledOnTouchOutside(true);
-//						downloadDialog.setTitle("文件下载");
-//						downloadDialog.setMessage("当前网络为运营商网络，是否确认下载？");
-//						downloadDialog.setPositiveButton("确认下载",
-//								new OnClickListener() {
-//
-//									@Override
-//									public void onClick(View v) {
-//										new Thread(new HttpThread(url)).start();
-//									}
-//								});
-//						downloadDialog.setNegativeButton("取消",
-//								new OnClickListener() {
-//
-//									@Override
-//									public void onClick(View v) {
-//										downloadDialog.dismiss();
-//
-//									}
-//								});
-//						downloadDialog.show();
-//					}
-//				}
-				Uri uri = Uri.parse(url);  
-	            Intent intent = new Intent(Intent.ACTION_VIEW, uri);  
-	            startActivity(intent); 
-			
-				
-				
+				// ConnectivityManager manager = (ConnectivityManager)
+				// MainActivity.this
+				// .getSystemService(Context.CONNECTIVITY_SERVICE);
+				// NetworkInfo info = manager.getActiveNetworkInfo();
+				// String name = info.getSubtypeName();
+				// Log.e("name", name);
+				// if (NetWorkStatusUtil.isNetConnected(MainActivity.this)) {
+				// if (NetWorkStatusUtil.isWifiConnected(MainActivity.this)) {
+				// Intent intent = new Intent(MainActivity.this,
+				// DownLoadService.class);
+				// intent.putExtra("url", EDU_PLATFORM_URL + url);
+				// intent.setAction("com.zhy_9.edu_platform.service.DownLoadService");
+				// MainActivity.this.startService(intent);
+				// } else {
+				// final MaterialDialog downloadDialog = new MaterialDialog(
+				// MainActivity.this);
+				// downloadDialog.setCanceledOnTouchOutside(true);
+				// downloadDialog.setTitle("文件下载");
+				// downloadDialog.setMessage("当前网络为运营商网络，是否确认下载？");
+				// downloadDialog.setPositiveButton("确认下载",
+				// new OnClickListener() {
+				//
+				// @Override
+				// public void onClick(View v) {
+				// new Thread(new HttpThread(url)).start();
+				// }
+				// });
+				// downloadDialog.setNegativeButton("取消",
+				// new OnClickListener() {
+				//
+				// @Override
+				// public void onClick(View v) {
+				// downloadDialog.dismiss();
+				//
+				// }
+				// });
+				// downloadDialog.show();
+				// }
+				// }
+				Uri uri = Uri.parse(url);
+				Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+				startActivity(intent);
+
 			}
 		});
 		mainWeb.loadUrl(EDU_PLATFORM_URL);
@@ -419,11 +420,11 @@ public class MainActivity extends InstrumentedActivity implements
 			});
 			timer = new Timer();
 			TimerTask task = new TimerTask() {
-				
+
 				@Override
 				public void run() {
 					handler.sendEmptyMessage(111);
-					
+
 				}
 			};
 			timer.schedule(task, 5000);
@@ -491,9 +492,9 @@ public class MainActivity extends InstrumentedActivity implements
 				refresh.setVisibility(View.VISIBLE);
 			}
 			timer.cancel();
-			
+
 		};
-		
+
 	};
 
 	private void errorPageClick(final WebView view, final String failingUrl) {
@@ -529,7 +530,7 @@ public class MainActivity extends InstrumentedActivity implements
 		};
 
 		public void onHideCustomView() {
-			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_USER);
+			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 			if (mView != null) {
 				if (mCallback != null) {
 					mCallback.onCustomViewHidden();
@@ -662,9 +663,12 @@ public class MainActivity extends InstrumentedActivity implements
 	}
 
 	protected void onPause() {
+		super.onPause();
 		// mainWeb.reload();
 		mainWeb.onPause();
-		super.onPause();
+
+		mainWeb.pauseTimers();
+
 	};
 
 	private long currentTime;
@@ -759,8 +763,9 @@ public class MainActivity extends InstrumentedActivity implements
 					}
 				});
 	}
-	public void isFreshVisiableAndFreshing(){
-		
+
+	public void isFreshVisiableAndFreshing() {
+
 	}
 
 	@Override
@@ -769,7 +774,7 @@ public class MainActivity extends InstrumentedActivity implements
 		if (errorFlag == 0) {
 			refresh.setVisibility(View.VISIBLE);
 			if (refresh.isRefreshing()) {
-				
+
 			}
 		} else {
 			errorPage.setVisibility(View.VISIBLE);
