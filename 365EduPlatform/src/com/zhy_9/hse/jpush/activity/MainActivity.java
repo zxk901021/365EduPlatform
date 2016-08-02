@@ -347,8 +347,16 @@ public class MainActivity extends InstrumentedActivity implements
 
 			@Override
 			public void onSChanged(int l, int t, int oldl, int oldt) {
+				
 				if (mainWeb.getScrollY() == 0) {
-					refresh.setEnabled(true);
+					String currentUrl = mainWeb.getUrl();
+					Log.e("current", currentUrl);
+					if (currentUrl.contains("learn#lesson")) {
+						refresh.setEnabled(false);
+					}else {
+						refresh.setEnabled(true);
+					}
+					
 				} else {
 					refresh.setEnabled(false);
 				}
@@ -691,7 +699,7 @@ public class MainActivity extends InstrumentedActivity implements
 
 	private void pressTwiceToBack() {
 		if (System.currentTimeMillis() - currentTime > 2000) {
-			Toast.makeText(MainActivity.this, "每天学习一点点，安全永相伴",
+			Toast.makeText(MainActivity.this, "每天学习一点点，安全永相伴；再次点击退出平台",
 					Toast.LENGTH_SHORT).show();
 			currentTime = System.currentTimeMillis();
 		} else {
