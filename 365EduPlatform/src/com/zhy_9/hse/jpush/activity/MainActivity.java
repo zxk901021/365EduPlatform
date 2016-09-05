@@ -11,6 +11,7 @@ import org.json.JSONObject;
 
 import com.android.volley.VolleyError;
 import com.zhy_9.edu_platform.adapter.LaunchPagerAdapter;
+import com.zhy_9.edu_platform.receiver.PushReceiver;
 import com.zhy_9.edu_platform.service.DownLoadService;
 import com.zhy_9.edu_platform.util.EduSohoUtil;
 import com.zhy_9.edu_platform.util.HttpThread;
@@ -30,6 +31,7 @@ import cn.jpush.android.api.TagAliasCallback;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.content.pm.ActivityInfo;
@@ -83,10 +85,10 @@ public class MainActivity extends InstrumentedActivity implements
 	private FoundWebView mainWeb;
 	private WebSettings webSettings;
 	public static final String JAVA_SCRIPT_INTERFACE_METHOD_NAME = "wst";
-	public static final String EDU_PLATFORM_URL = "http://hse2.mai022.com";
+	public static final String EDU_PLATFORM_URL = "http://m.hse365.cc";
 	// public static final String EDU_PLATFORM_URL = "http://192.168.1.188";
 	// public static final String EDU_PLATFORM_URL = "https://www.google.com";
-	public static final String CHECK_VERSION_URL = "http://hse2.mai022.com/wb/api/getversion";
+	public static final String CHECK_VERSION_URL = "http://m.hse365.cc/wb/api/getversion";
 	private String registerId;
 	private SharedPreferences preferences;
 	private Editor editor;
@@ -347,16 +349,16 @@ public class MainActivity extends InstrumentedActivity implements
 
 			@Override
 			public void onSChanged(int l, int t, int oldl, int oldt) {
-				
+
 				if (mainWeb.getScrollY() == 0) {
 					String currentUrl = mainWeb.getUrl();
 					Log.e("current", currentUrl);
 					if (currentUrl.contains("learn#lesson")) {
 						refresh.setEnabled(false);
-					}else {
+					} else {
 						refresh.setEnabled(true);
 					}
-					
+
 				} else {
 					refresh.setEnabled(false);
 				}
@@ -671,22 +673,28 @@ public class MainActivity extends InstrumentedActivity implements
 	}
 
 	protected void onPause() {
-		super.onPause();
-		// mainWeb.reload();
-		mainWeb.onPause();
-
-		mainWeb.pauseTimers();
+		currentUrl = mainWeb.getUrl();
+		if (currentUrl.contains("http://m.hse365.cc/test")) {
+			super.onPause();
+			Log.e("::::::", "if");
+		} else {
+			super.onPause();
+			Log.e("::::::", "else");
+			mainWeb.onPause();
+			mainWeb.pauseTimers();
+		}
 
 	};
 
 	private long currentTime;
 	private String currentUrl;
-	private String[] treeUrls = new String[] { "http://hse2.mai022.com/",
-			"http://hse2.mai022.com/course/explore",
-			"http://hse2.mai022.com/my/exam", "http://hse2.mai022.com/user" };
+	private String[] treeUrls = new String[] { "http://m.hse365.cc/",
+			EDU_PLATFORM_URL + "/my/exam", EDU_PLATFORM_URL + "/user" };
 
 	private boolean isTreeUrl(String currentUrl) {
-		if (currentUrl.contains("http://hse2.mai022.com/user")) {
+		if (currentUrl.contains(EDU_PLATFORM_URL + "/user")) {
+			return true;
+		} else if (currentUrl.contains(EDU_PLATFORM_URL + "/course/explore")) {
 			return true;
 		}
 		for (String s : treeUrls) {
@@ -710,6 +718,9 @@ public class MainActivity extends InstrumentedActivity implements
 	public boolean onKeyDown(int keyCode, android.view.KeyEvent event) {
 		currentUrl = mainWeb.getUrl();
 		Log.e("currentUrl", currentUrl);
+		Log.e("isTrue",
+				currentUrl.contains(EDU_PLATFORM_URL + "course/explore") + "");
+		Log.e("course", EDU_PLATFORM_URL + "/course/explore");
 		if (keyCode == KeyEvent.KEYCODE_BACK) {
 			if (isTreeUrl(currentUrl)) {
 				pressTwiceToBack();
